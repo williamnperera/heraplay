@@ -19,7 +19,13 @@
     #modal { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; }
     #modal-content { background: white; padding: 20px; border-radius: 8px; width: 300px; }
   </style>
-</head>
+<style>
+.id-link {
+  cursor: pointer;
+  color: #1e88e5;
+  text-decoration: underline;
+}
+</style></head>
 <body>
 <h1>Painel de Pagamentos</h1>
 <div id="login">
@@ -70,169 +76,6 @@
 <input id="valorPagamento" type="hidden"/>
 </div>
 </div>
-<script>
-    let dadosTotais = [];
-    let grafico;
-
-    function verificarSenha() {
-      if (document.getElementById("senha").value === "adminhera") {
-        document.getElementById("login").style.display = "none";
-        document.getElementById("painel").style.display = "block";
-        carregarPagamentos();
-        carregarUsuarios();
-      } else {
-        document.getElementById("erro").innerText = "Senha incorreta!";
-      }
-    }
-
-    function trocarAba(aba) {
-      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-      document.querySelectorAll(".tab")[aba === 'pagamentos' ? 0 : 1].classList.add("active");
-      document.getElementById("pagamentosTab").classList.toggle("hidden", aba !== "pagamentos");
-      document.getElementById("usuariosTab").classList.toggle("hidden", aba !== "usuarios");
-    }
-
-    async function carregarPagamentos() {
-      const res = await fetch("/api/pix");
-      const dados = await res.json();
-      dadosTotais = dados;
-      aplicarFiltros();
-      gerarGrafico(dados);
-    }
-
-    function aplicarFiltros() {
-      const termo = document.getElementById("filtroUsuario").value.toLowerCase();
-      const dataFiltro = document.getElementById("filtroData").value;
-      let filtrados = dadosTotais;
-
-      if (termo) {
-        filtrados = filtrados.filter(p =>
-          (p.usuario || "").toLowerCase().includes(termo) ||
-          (p.id || "").toLowerCase().includes(termo)
-        );
-      }
-
-      if (dataFiltro) {
-        filtrados = filtrados.filter(p => {
-          const dataLocal = new Date(p.data).toLocaleDateString("sv-SE");
-          return dataLocal === dataFiltro;
-        });
-      }
-
-      const corpo = document.querySelector("#tabela tbody");
-      corpo.innerHTML = "";
-      filtrados.forEach(p => {
-        const data = new Date(p.data).toLocaleString();
-        corpo.innerHTML += `<tr>
-          <td>${p.usuario || "-"}</td>
-          <td>${p.id}</td>
-          <td>${(p.valor || 0).toFixed(2)}</td>
-          <td>${p.status}</td>
-          <td>${data}</td>
-          <td>
-            <button onclick="copiarID('${p.id}')">Copiar ID</button>
-            <button onclick="abrirModal('${p.id}', ${p.valor})">Vincular Usuário</button>
-          </td>
-        </tr>`;
-      });
-    }
-
-    function copiarID(id) {
-      navigator.clipboard.writeText(id);
-      alert("ID copiado: " + id);
-    }
-
-    function abrirModal(id, valor) {
-      document.getElementById("modal").style.display = "flex";
-      document.getElementById("idPagamento").value = id;
-      document.getElementById("valorPagamento").value = valor;
-    }
-
-    function fecharModal() {
-      document.getElementById("modal").style.display = "none";
-    }
-
-    async function salvarUsuario() {
-      const id = document.getElementById("idPagamento").value;
-      const nome = document.getElementById("nome").value;
-      const telefone = document.getElementById("telefone").value;
-      const senha = document.getElementById("senhaUsuario").value;
-      const valor = parseFloat(document.getElementById("valorPagamento").value);
-      const dias = valor === 20 ? 30 : valor === 55 ? 90 : valor === 150 ? 365 : 30;
-      const dataExpira = new Date();
-      dataExpira.setDate(dataExpira.getDate() + dias);
-
-      await fetch("/api/usuarios", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          usuario: id,
-          nome,
-          telefone,
-          senha,
-          valor_pago: valor,
-          data_expira: dataExpira.toISOString().slice(0,10)
-        })
-      });
-
-      fecharModal();
-      carregarUsuarios();
-    }
-
-    async function carregarUsuarios() {
-      const res = await fetch("/api/usuarios");
-      const dados = await res.json();
-      const corpo = document.querySelector("#tabelaUsuarios tbody");
-      corpo.innerHTML = "";
-      dados.forEach(u => {
-        corpo.innerHTML += `<tr>
-          <td>${u.nome}</td>
-          <td>${u.telefone}</td>
-          <td>${u.senha}</td>
-          <td>${new Date(u.data_expira).toLocaleDateString()}</td>
-        </tr>`;
-      });
-    }
-
-    function gerarGrafico(dados) {
-      const meses = {};
-      dados.forEach(p => {
-        const mes = new Date(p.data).toLocaleDateString("pt-BR", { month: "short", year: "numeric" });
-        if (!meses[mes]) meses[mes] = 0;
-        meses[mes] += 1;
-      });
-
-      const ctx = document.getElementById("graficoVendas").getContext("2d");
-      if (grafico) grafico.destroy();
-      grafico = new Chart(ctx, {
-        type: "bar",
-        data: {
-          labels: Object.keys(meses),
-          datasets: [{
-            label: "Pagamentos por mês",
-            data: Object.values(meses),
-            backgroundColor: "rgba(30,136,229,0.7)"
-          }]
-        }
-      });
-    }
-
-    document.getElementById("filtroUsuario").addEventListener("input", aplicarFiltros);
-    document.getElementById("filtroData").addEventListener("change", aplicarFiltros);
-    document.getElementById("exportarExcel").addEventListener("click", () => {
-      const linhas = [["Usuário", "ID", "Valor", "Status", "Data"]];
-      dadosTotais.forEach(p => {
-        linhas.push([p.usuario, p.id, p.valor, p.status, p.data]);
-      });
-      const csv = linhas.map(l => l.join(",")).join("\n");
-      const blob = new Blob([csv], { type: "text/csv" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "pagamentos.csv";
-      link.click();
-    });
-  </script>
-
 <div id="modal-editar" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0;
 background: rgba(0,0,0,0.5); justify-content: center; align-items: center;">
 <div style="background:white; padding: 20px; border-radius: 8px; width: 300px;">
@@ -247,36 +90,66 @@ background: rgba(0,0,0,0.5); justify-content: center; align-items: center;">
 </div>
 </div>
 <script>
-async function editarUsuario(usuario) {
+async function carregarUsuarios() {
   const res = await fetch("/api/usuarios");
   const lista = await res.json();
-  const u = lista.find(u => u.usuario === usuario);
-  if (!u) return alert("Usuário não encontrado.");
+  const corpo = document.getElementById("corpoUsuarios");
+  corpo.innerHTML = "";
+  lista.forEach(u => {
+    const linha = document.createElement("tr");
 
-  document.getElementById("edit-nome").value = u.nome;
-  document.getElementById("edit-telefone").value = u.telefone;
-  document.getElementById("edit-senha").value = u.senha;
-  document.getElementById("edit-expira").value = u.data_expira;
-  document.getElementById("edit-usuario").value = u.usuario;
+    linha.innerHTML = `
+      <td>${u.nome}</td>
+      <td>${u.telefone}</td>
+      <td>${u.senha}</td>
+      <td>${new Date(u.data_expira).toLocaleDateString()}</td>
+      <td><button onclick="editarUsuario('${u.usuario}')">Editar</button></td>
+    `;
 
-  document.getElementById("modal-editar").style.display = "flex";
+    corpo.appendChild(linha);
+  });
+}
+</script><script>
+async function carregarPagamentos() {
+  const res = await fetch("/api/pagamentos");
+  const lista = await res.json();
+  const corpo = document.getElementById("corpoPagamentos");
+  corpo.innerHTML = "";
+  lista.forEach(p => {
+    const linha = document.createElement("tr");
+    linha.innerHTML = `
+      <td>${p.usuario}</td>
+      <td><span class="id-link" onclick="mostrarDetalhes('${p.usuario}', this)">${p.id}</span></td>
+      <td>${p.valor.toFixed(2)}</td>
+      <td>${p.status}</td>
+      <td>${new Date(p.data).toLocaleString()}</td>
+      <td><button onclick="copiarTexto('${p.id}')">Copiar ID</button></td>
+    `;
+    corpo.appendChild(linha);
+  });
 }
 
-async function salvarEdicao() {
-  const usuario = document.getElementById("edit-usuario").value;
-  const nome = document.getElementById("edit-nome").value;
-  const telefone = document.getElementById("edit-telefone").value;
-  const senha = document.getElementById("edit-senha").value;
-  const data_expira = document.getElementById("edit-expira").value;
+async function mostrarDetalhes(usuario, elemento) {
+  const jaExiste = elemento.closest("tr").nextElementSibling;
+  if (jaExiste && jaExiste.classList.contains("detalhes-usuario")) {
+    jaExiste.remove();
+    return;
+  }
 
-  await fetch("/api/usuarios", {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ usuario, nome, telefone, senha, data_expira })
-  });
+  const res = await fetch("/api/usuarios");
+  const lista = await res.json();
+  const user = lista.find(u => u.usuario === usuario);
+  if (!user) return;
 
-  document.getElementById("modal-editar").style.display = "none";
-  carregarUsuarios();
+  const detalhes = document.createElement("tr");
+  detalhes.classList.add("detalhes-usuario");
+  detalhes.innerHTML = `<td colspan="6">
+    <strong>Nome:</strong> ${user.nome || "-"}<br/>
+    <strong>Telefone:</strong> ${user.telefone || "-"}<br/>
+    <strong>Senha:</strong> ${user.senha || "-"}<br/>
+    <strong>Expira em:</strong> ${new Date(user.data_expira).toLocaleDateString()}
+  </td>`;
+  elemento.closest("tr").after(detalhes);
 }
 </script></body>
 </html>
