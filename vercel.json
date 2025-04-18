@@ -1,0 +1,6 @@
+
+{
+  "rewrites": [
+    { "source": "/pushinpay/webhook", "destination": "/api/pix" }
+  ]
+}
