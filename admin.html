@@ -53,7 +53,7 @@
   <div id="painel" style="display:none;">
     <input type="text" id="filtroUsuario" placeholder="Buscar por usuário ou ID" />
     <input type="date" id="filtroData" />
-    <button onclick="exportarCSV()">Exportar para Excel</button>
+    <button id="exportarExcel">Exportar para Excel</button>
     <div id="grafico">
       <canvas id="graficoVendas"></canvas>
     </div>
@@ -90,8 +90,27 @@
       const res = await fetch("/api/pix");
       const dados = await res.json();
       dadosTotais = dados;
-      renderizarTabela(dados);
+      aplicarFiltros();
       gerarGrafico(dados);
+    }
+
+    function aplicarFiltros() {
+      const termo = document.getElementById("filtroUsuario").value.toLowerCase();
+      const dataFiltro = document.getElementById("filtroData").value;
+      let filtrados = dadosTotais;
+
+      if (termo) {
+        filtrados = filtrados.filter(p =>
+          (p.usuario || "").toLowerCase().includes(termo) ||
+          (p.id || "").toLowerCase().includes(termo)
+        );
+      }
+
+      if (dataFiltro) {
+        filtrados = filtrados.filter(p => (p.data || "").slice(0, 10) === dataFiltro);
+      }
+
+      renderizarTabela(filtrados);
     }
 
     function renderizarTabela(lista) {
@@ -114,21 +133,6 @@
     function copiarID(id) {
       navigator.clipboard.writeText(id);
       alert("ID copiado: " + id);
-    }
-
-    function exportarCSV() {
-      const linhas = [
-        ["Usuário", "ID", "Valor", "Status", "Data"]
-      ];
-      dadosTotais.forEach(p => {
-        linhas.push([p.usuario, p.id, p.valor, p.status, p.data]);
-      });
-      const csv = linhas.map(l => l.join(",")).join("\n");
-      const blob = new Blob([csv], { type: "text/csv" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "pagamentos.csv";
-      link.click();
     }
 
     function gerarGrafico(dados) {
@@ -156,22 +160,22 @@
       });
     }
 
-    document.getElementById("filtroUsuario").addEventListener("input", e => {
-      const termo = e.target.value.toLowerCase();
-      const filtrados = dadosTotais.filter(p =>
-        (p.usuario || "").toLowerCase().includes(termo) ||
-        (p.id || "").toLowerCase().includes(termo)
-      );
-      renderizarTabela(filtrados);
-    });
+    document.getElementById("filtroUsuario").addEventListener("input", aplicarFiltros);
+    document.getElementById("filtroData").addEventListener("change", aplicarFiltros);
 
-    document.getElementById("filtroData").addEventListener("change", e => {
-      const dataFiltro = e.target.value;
-      const filtrados = dadosTotais.filter(p => {
-        const data = new Date(p.data).toISOString().split("T")[0];
-        return data === dataFiltro;
+    document.getElementById("exportarExcel").addEventListener("click", () => {
+      const linhas = [
+        ["Usuário", "ID", "Valor", "Status", "Data"]
+      ];
+      dadosTotais.forEach(p => {
+        linhas.push([p.usuario, p.id, p.valor, p.status, p.data]);
       });
-      renderizarTabela(filtrados);
+      const csv = linhas.map(l => l.join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "pagamentos.csv";
+      link.click();
     });
   </script>
 </body>
