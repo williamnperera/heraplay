@@ -65,11 +65,11 @@
 <body>
   <h1>Painel de Pagamentos</h1>
 
-  <div id="login" style="text-align:center;">
+  <div id="login">
     <p style="text-align:center;">Digite a senha:</p>
     <div style="text-align:center;">
       <input type="password" id="senha" placeholder="Senha de acesso" />
-      <button onclick="verificarSenha()">Entrar</button>
+      <button id="btnEntrar">Entrar</button>
       <p id="erro" style="color:red;"></p>
     </div>
   </div>
@@ -138,16 +138,21 @@
 
     
     function verificarSenha() {
+      console.log("Tentando validar senha...");
       const senhaDigitada = document.getElementById("senha").value.trim();
       if (senhaDigitada === "adminhera") {
+        console.log("Senha correta, exibindo painel");
         document.getElementById("login").style.display = "none";
         document.getElementById("painel").style.display = "block";
         carregarPagamentos();
         carregarUsuarios();
       } else {
+        console.log("Senha incorreta");
         document.getElementById("erro").innerText = "Senha incorreta!";
       }
     }
+
+    document.getElementById("btnEntrar").addEventListener("click", verificarSenha);
     
       if (document.getElementById("senha").value === "adminhera") {
         document.getElementById("login").style.display = "none";
