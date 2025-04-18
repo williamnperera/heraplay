@@ -107,7 +107,7 @@
       }
 
       if (dataFiltro) {
-        filtrados = filtrados.filter(p => (p.data || "").slice(0, 10) === dataFiltro);
+        filtrados = filtrados.filter(p => new Date(p.data).toLocaleDateString("sv-SE") === dataFiltro);
       }
 
       renderizarTabela(filtrados);
