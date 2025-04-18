@@ -1,1 +1,119 @@
-<!DOCTYPE html><html><body><h1>Frontend Pix</h1></body></html>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>HERA PLAY - Pagamento Pix</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f7f7f7;
+      padding: 40px;
+      text-align: center;
+    }
+    input, select, button {
+      padding: 12px;
+      margin: 10px;
+      font-size: 16px;
+      width: 100%;
+      max-width: 300px;
+    }
+    button {
+      background: #1e88e5;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    img {
+      margin-top: 20px;
+      max-width: 300px;
+    }
+    #resultado {
+      background: white;
+      margin-top: 30px;
+      padding: 20px;
+      border-radius: 10px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>HERA PLAY</h1>
+  <p>Informe seu nome e escolha um valor para gerar seu Pix:</p>
+  <input type="text" id="usuario" placeholder="Seu nome ou ID" required>
+  <select id="valor">
+    <option value="20">R$20 - Mensal</option>
+    <option value="55">R$55 - Trimestral</option>
+    <option value="150">R$150 - Anual</option>
+  </select>
+  <input type="number" id="valorPersonalizado" placeholder="Ou digite outro valor (opcional)">
+  <button onclick="criarPagamento()">Gerar Pagamento</button>
+
+  <div id="resultado">
+    <h3>Escaneie o QR Code ou copie o código Pix:</h3>
+    <img id="qrcode" src="">
+    <p id="copiacola"></p>
+    <button onclick="copiarCodigo()">Copiar código Pix</button>
+    <p id="statusPagamento" style="margin-top: 15px; color: orange;">Aguardando pagamento...</p>
+  </div>
+
+  <script>
+    let paymentId = '';
+
+    async function criarPagamento() {
+      const usuario = document.getElementById("usuario").value.trim();
+      if (!usuario) {
+        alert("Por favor, digite seu nome.");
+        return;
+      }
+
+      const valorSelect = parseFloat(document.getElementById("valor").value);
+      const valorInput = parseFloat(document.getElementById("valorPersonalizado").value);
+      const valor = (valorInput || valorSelect) * 100;
+
+      const resposta = await fetch("https://api.pushinpay.com.br/api/pix/cashIn", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer 24164|2qlyKet6bpYiXWtippYylqgoJMRqFaJszV3nBgL13f769622",
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({
+          value: valor,
+          webhook_url: `https://vercell-coral.vercel.app/pushinpay/webhook?usuario=${encodeURIComponent(usuario)}`
+        })
+      });
+
+      const data = await resposta.json();
+      paymentId = data.id;
+
+      document.getElementById("qrcode").src = data.qr_code_base64;
+      document.getElementById("copiacola").innerText = data.qr_code;
+      document.getElementById("resultado").style.display = "block";
+      document.getElementById("statusPagamento").innerText = "Aguardando pagamento...";
+
+      const statusEl = document.getElementById("statusPagamento");
+      const intervalo = setInterval(async () => {
+        const statusResp = await fetch(`https://api.pushinpay.com.br/api/transactions/${paymentId}`, {
+          headers: {
+            Authorization: "Bearer 24164|2qlyKet6bpYiXWtippYylqgoJMRqFaJszV3nBgL13f769622",
+            Accept: "application/json"
+          }
+        });
+        const statusData = await statusResp.json();
+        if (statusData.status === "paid") {
+          statusEl.innerHTML = "✅ Pagamento confirmado!<br><small>ID: " + paymentId + "</small>";
+          statusEl.style.color = "green";
+          clearInterval(intervalo);
+        }
+      }, 5000);
+    }
+
+    function copiarCodigo() {
+      const codigo = document.getElementById("copiacola").innerText;
+      navigator.clipboard.writeText(codigo);
+      alert("Código Pix copiado!");
+    }
+  </script>
+</body>
+</html>
