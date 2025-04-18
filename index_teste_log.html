@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8"/>
+  <title>Teste Webhook - PushinPay</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 30px;
+      text-align: center;
+    }
+    input, select, button {
+      padding: 10px;
+      margin: 8px;
+      width: 90%;
+      max-width: 280px;
+      font-size: 16px;
+    }
+    img {
+      max-width: 300px;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Teste Webhook /api/log</h1>
+
+  <input type="text" id="usuario" placeholder="Nome do usuário">
+  <select id="valor">
+    <option value="10">R$10</option>
+    <option value="55">R$55</option>
+    <option value="150">R$150</option>
+  </select>
+  <button onclick="gerar()">Gerar Pix (Log)</button>
+
+  <div id="retorno"></div>
+
+  <script>
+    async function gerar() {
+      const usuario = document.getElementById("usuario").value.trim();
+      const valor = document.getElementById("valor").value;
+
+      if (!usuario) {
+        alert("Digite um nome de usuário.");
+        return;
+      }
+
+      const res = await fetch("https://api.pushinpay.com.br/api/pix/cashIn", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer 24164|2qlyKet6bpYiXWtippYylqgoJMRqFaJszV3nBgL13f769622",
+          "Content-Type": "application/json",
+          Accept: "application/json"
+        },
+        body: JSON.stringify({
+          value: Number(valor) * 100,
+          webhook_url: `https://heraplaypagamentos.vercel.app/api/log?usuario=${encodeURIComponent(usuario)}`
+        })
+      });
+
+      const json = await res.json();
+
+      document.getElementById("retorno").innerHTML = `
+        <p><strong>ID:</strong> ${json.id}</p>
+        <p><img src="${json.qr_code_base64}" /></p>
+        <textarea style="width:90%;height:60px">${json.qr_code}</textarea>
+      `;
+    }
+  </script>
+</body>
+</html>
