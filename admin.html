@@ -238,7 +238,14 @@
       link.download = "pagamentos.csv";
       link.click();
     });
-  </script>
+  
+
+async function excluirUsuario(usuario) {
+  if (!confirm("Deseja realmente excluir este usuário?")) return;
+  await fetch(`/api/usuarios?id=${usuario}`, { method: "DELETE" });
+  carregarUsuarios();
+}
+</script>
 <script>
 document.getElementById("filtroStatus").addEventListener("change", carregarUsuarios);
 
