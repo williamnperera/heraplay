@@ -65,7 +65,7 @@
 <body>
   <h1>Painel de Pagamentos</h1>
 
-  <div id="login">
+  <div id="login" style="text-align:center;">
     <p style="text-align:center;">Digite a senha:</p>
     <div style="text-align:center;">
       <input type="password" id="senha" placeholder="Senha de acesso" />
@@ -136,7 +136,19 @@
     let dadosTotais = [];
     let grafico;
 
+    
     function verificarSenha() {
+      const senhaDigitada = document.getElementById("senha").value.trim();
+      if (senhaDigitada === "adminhera") {
+        document.getElementById("login").style.display = "none";
+        document.getElementById("painel").style.display = "block";
+        carregarPagamentos();
+        carregarUsuarios();
+      } else {
+        document.getElementById("erro").innerText = "Senha incorreta!";
+      }
+    }
+    
       if (document.getElementById("senha").value === "adminhera") {
         document.getElementById("login").style.display = "none";
         document.getElementById("painel").style.display = "block";
