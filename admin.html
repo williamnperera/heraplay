@@ -151,5 +151,17 @@ async function mostrarDetalhes(usuario, elemento) {
   </td>`;
   elemento.closest("tr").after(detalhes);
 }
+</script><script>
+function verificarSenha() {
+  const senha = document.getElementById('senha').value;
+  if (senha === 'adminhera') {
+    document.getElementById('painel').style.display = 'block';
+    document.getElementById('login').style.display = 'none';
+    carregarPagamentos();
+    carregarUsuarios();
+  } else {
+    alert('Senha incorreta!');
+  }
+}
 </script></body>
 </html>
