@@ -5,85 +5,96 @@
   <title>Painel de Pagamentos</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 30px;
-      background: #f1f1f1;
-      text-align: center;
-    }
-    h1 {
-      color: #1e88e5;
-    }
-    table {
-      margin: 20px auto;
-      border-collapse: collapse;
-      width: 90%;
-      max-width: 1000px;
-      background: white;
-    }
-    th, td {
-      padding: 10px;
-      border: 1px solid #ccc;
-    }
-    th {
-      background-color: #1e88e5;
-      color: white;
-    }
-    input, button {
-      padding: 10px;
-      margin: 5px;
-      font-size: 14px;
-    }
-    #grafico {
-      max-width: 800px;
-      margin: 40px auto;
-    }
+    body { font-family: Arial; padding: 30px; background: #f1f1f1; }
+    h1 { color: #1e88e5; text-align: center; }
+    table { margin: 20px auto; border-collapse: collapse; width: 95%; background: white; }
+    th, td { padding: 10px; border: 1px solid #ccc; }
+    th { background-color: #1e88e5; color: white; }
+    input, button { padding: 8px; margin: 5px; font-size: 14px; }
+    .tabs { text-align: center; margin-bottom: 20px; }
+    .tab { padding: 10px 20px; background: #eee; border: 1px solid #ccc; display: inline-block; cursor: pointer; }
+    .tab.active { background: #1e88e5; color: white; }
+    .hidden { display: none; }
+    #modal { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; }
+    #modal-content { background: white; padding: 20px; border-radius: 8px; width: 300px; }
   </style>
 </head>
 <body>
   <h1>Painel de Pagamentos</h1>
 
   <div id="login">
-    <p>Digite a senha:</p>
-    <input type="password" id="senha" placeholder="Senha de acesso" />
-    <button onclick="verificarSenha()">Entrar</button>
-    <p id="erro" style="color:red;"></p>
+    <p style="text-align:center;">Digite a senha:</p>
+    <div style="text-align:center;">
+      <input type="password" id="senha" placeholder="Senha de acesso" />
+      <button onclick="verificarSenha()">Entrar</button>
+      <p id="erro" style="color:red;"></p>
+    </div>
   </div>
 
   <div id="painel" style="display:none;">
-    <input type="text" id="filtroUsuario" placeholder="Buscar por usuário ou ID" />
-    <input type="date" id="filtroData" />
-    <button id="exportarExcel">Exportar para Excel</button>
-    <div id="grafico">
-      <canvas id="graficoVendas"></canvas>
+    <div class="tabs">
+      <div class="tab active" onclick="trocarAba('pagamentos')">Pagamentos</div>
+      <div class="tab" onclick="trocarAba('usuarios')">Usuários Ativos</div>
     </div>
-    <table id="tabela">
-      <thead>
-        <tr>
-          <th>Usuário</th>
-          <th>ID</th>
-          <th>Valor (R$)</th>
-          <th>Status</th>
-          <th>Data</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+
+    <div id="pagamentosTab">
+      <input type="text" id="filtroUsuario" placeholder="Buscar por usuário ou ID" />
+      <input type="date" id="filtroData" />
+      <button id="exportarExcel">Exportar para Excel</button>
+      <canvas id="graficoVendas" style="max-width:800px; margin: 20px auto;"></canvas>
+      <table id="tabela">
+        <thead>
+          <tr>
+            <th>Usuário</th><th>ID</th><th>Valor (R$)</th><th>Status</th><th>Data</th><th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div id="usuariosTab" class="hidden">
+      <table id="tabelaUsuarios">
+        <thead>
+          <tr><th>Nome</th><th>Telefone</th><th>Senha</th><th>Expiração</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="modal">
+    <div id="modal-content">
+      <h3>Vincular Usuário</h3>
+      <input id="nome" placeholder="Nome completo" /><br/>
+      <input id="telefone" placeholder="Telefone" /><br/>
+      <input id="senhaUsuario" placeholder="Senha" /><br/>
+      <button onclick="salvarUsuario()">Salvar</button>
+      <button onclick="fecharModal()">Cancelar</button>
+      <input type="hidden" id="idPagamento">
+      <input type="hidden" id="valorPagamento">
+    </div>
   </div>
 
   <script>
     let dadosTotais = [];
+    let grafico;
 
     function verificarSenha() {
-      const senha = document.getElementById("senha").value;
-      if (senha === "adminhera") {
+      if (document.getElementById("senha").value === "adminhera") {
         document.getElementById("login").style.display = "none";
         document.getElementById("painel").style.display = "block";
         carregarPagamentos();
+        carregarUsuarios();
       } else {
         document.getElementById("erro").innerText = "Senha incorreta!";
       }
+    }
+
+    function trocarAba(aba) {
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".tab")[aba === 'pagamentos' ? 0 : 1].classList.add("active");
+      document.getElementById("pagamentosTab").classList.toggle("hidden", aba !== "pagamentos");
+      document.getElementById("usuariosTab").classList.toggle("hidden", aba !== "usuarios");
     }
 
     async function carregarPagamentos() {
@@ -107,32 +118,85 @@
       }
 
       if (dataFiltro) {
-        filtrados = filtrados.filter(p => new Date(p.data).toLocaleDateString("sv-SE") === dataFiltro);
+        filtrados = filtrados.filter(p => {
+          const dataLocal = new Date(p.data).toLocaleDateString("sv-SE");
+          return dataLocal === dataFiltro;
+        });
       }
 
-      renderizarTabela(filtrados);
-    }
-
-    function renderizarTabela(lista) {
       const corpo = document.querySelector("#tabela tbody");
       corpo.innerHTML = "";
-      lista.forEach(p => {
+      filtrados.forEach(p => {
         const data = new Date(p.data).toLocaleString();
-        const linha = `<tr>
+        corpo.innerHTML += `<tr>
           <td>${p.usuario || "-"}</td>
           <td>${p.id}</td>
           <td>${(p.valor || 0).toFixed(2)}</td>
           <td>${p.status}</td>
           <td>${data}</td>
-          <td><button onclick="copiarID('${p.id}')">Copiar ID</button></td>
+          <td>
+            <button onclick="copiarID('${p.id}')">Copiar ID</button>
+            <button onclick="abrirModal('${p.id}', ${p.valor})">Vincular Usuário</button>
+          </td>
         </tr>`;
-        corpo.innerHTML += linha;
       });
     }
 
     function copiarID(id) {
       navigator.clipboard.writeText(id);
       alert("ID copiado: " + id);
+    }
+
+    function abrirModal(id, valor) {
+      document.getElementById("modal").style.display = "flex";
+      document.getElementById("idPagamento").value = id;
+      document.getElementById("valorPagamento").value = valor;
+    }
+
+    function fecharModal() {
+      document.getElementById("modal").style.display = "none";
+    }
+
+    async function salvarUsuario() {
+      const id = document.getElementById("idPagamento").value;
+      const nome = document.getElementById("nome").value;
+      const telefone = document.getElementById("telefone").value;
+      const senha = document.getElementById("senhaUsuario").value;
+      const valor = parseFloat(document.getElementById("valorPagamento").value);
+      const dias = valor === 20 ? 30 : valor === 55 ? 90 : valor === 150 ? 365 : 30;
+      const dataExpira = new Date();
+      dataExpira.setDate(dataExpira.getDate() + dias);
+
+      await fetch("/api/usuarios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          usuario: id,
+          nome,
+          telefone,
+          senha,
+          valor_pago: valor,
+          data_expira: dataExpira.toISOString().slice(0,10)
+        })
+      });
+
+      fecharModal();
+      carregarUsuarios();
+    }
+
+    async function carregarUsuarios() {
+      const res = await fetch("/api/usuarios");
+      const dados = await res.json();
+      const corpo = document.querySelector("#tabelaUsuarios tbody");
+      corpo.innerHTML = "";
+      dados.forEach(u => {
+        corpo.innerHTML += `<tr>
+          <td>${u.nome}</td>
+          <td>${u.telefone}</td>
+          <td>${u.senha}</td>
+          <td>${new Date(u.data_expira).toLocaleDateString()}</td>
+        </tr>`;
+      });
     }
 
     function gerarGrafico(dados) {
@@ -144,7 +208,8 @@
       });
 
       const ctx = document.getElementById("graficoVendas").getContext("2d");
-      new Chart(ctx, {
+      if (grafico) grafico.destroy();
+      grafico = new Chart(ctx, {
         type: "bar",
         data: {
           labels: Object.keys(meses),
@@ -153,20 +218,14 @@
             data: Object.values(meses),
             backgroundColor: "rgba(30,136,229,0.7)"
           }]
-        },
-        options: {
-          responsive: true
         }
       });
     }
 
     document.getElementById("filtroUsuario").addEventListener("input", aplicarFiltros);
     document.getElementById("filtroData").addEventListener("change", aplicarFiltros);
-
     document.getElementById("exportarExcel").addEventListener("click", () => {
-      const linhas = [
-        ["Usuário", "ID", "Valor", "Status", "Data"]
-      ];
+      const linhas = [["Usuário", "ID", "Valor", "Status", "Data"]];
       dadosTotais.forEach(p => {
         linhas.push([p.usuario, p.id, p.valor, p.status, p.data]);
       });
