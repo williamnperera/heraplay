@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <title>Admin - Pagamentos Confirmados</title>
+  <meta charset="UTF-8" />
+  <title>Painel de Pagamentos</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -17,11 +18,11 @@
       margin: 20px auto;
       border-collapse: collapse;
       width: 90%;
-      max-width: 900px;
+      max-width: 1000px;
       background: white;
     }
     th, td {
-      padding: 12px;
+      padding: 10px;
       border: 1px solid #ccc;
     }
     th {
@@ -30,8 +31,12 @@
     }
     input, button {
       padding: 10px;
-      font-size: 16px;
-      margin: 10px;
+      margin: 5px;
+      font-size: 14px;
+    }
+    #grafico {
+      max-width: 800px;
+      margin: 40px auto;
     }
   </style>
 </head>
@@ -46,6 +51,12 @@
   </div>
 
   <div id="painel" style="display:none;">
+    <input type="text" id="filtroUsuario" placeholder="Buscar por usuário ou ID" />
+    <input type="date" id="filtroData" />
+    <button onclick="exportarCSV()">Exportar para Excel</button>
+    <div id="grafico">
+      <canvas id="graficoVendas"></canvas>
+    </div>
     <table id="tabela">
       <thead>
         <tr>
@@ -54,6 +65,7 @@
           <th>Valor (R$)</th>
           <th>Status</th>
           <th>Data</th>
+          <th></th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -61,6 +73,8 @@
   </div>
 
   <script>
+    let dadosTotais = [];
+
     function verificarSenha() {
       const senha = document.getElementById("senha").value;
       if (senha === "adminhera") {
@@ -75,19 +89,90 @@
     async function carregarPagamentos() {
       const res = await fetch("/api/pix");
       const dados = await res.json();
+      dadosTotais = dados;
+      renderizarTabela(dados);
+      gerarGrafico(dados);
+    }
+
+    function renderizarTabela(lista) {
       const corpo = document.querySelector("#tabela tbody");
       corpo.innerHTML = "";
-      dados.forEach(p => {
+      lista.forEach(p => {
+        const data = new Date(p.data).toLocaleString();
         const linha = `<tr>
           <td>${p.usuario || "-"}</td>
           <td>${p.id}</td>
           <td>${(p.valor || 0).toFixed(2)}</td>
           <td>${p.status}</td>
-          <td>${new Date(p.data).toLocaleString()}</td>
+          <td>${data}</td>
+          <td><button onclick="copiarID('${p.id}')">Copiar ID</button></td>
         </tr>`;
         corpo.innerHTML += linha;
       });
     }
+
+    function copiarID(id) {
+      navigator.clipboard.writeText(id);
+      alert("ID copiado: " + id);
+    }
+
+    function exportarCSV() {
+      const linhas = [
+        ["Usuário", "ID", "Valor", "Status", "Data"]
+      ];
+      dadosTotais.forEach(p => {
+        linhas.push([p.usuario, p.id, p.valor, p.status, p.data]);
+      });
+      const csv = linhas.map(l => l.join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "pagamentos.csv";
+      link.click();
+    }
+
+    function gerarGrafico(dados) {
+      const meses = {};
+      dados.forEach(p => {
+        const mes = new Date(p.data).toLocaleDateString("pt-BR", { month: "short", year: "numeric" });
+        if (!meses[mes]) meses[mes] = 0;
+        meses[mes] += 1;
+      });
+
+      const ctx = document.getElementById("graficoVendas").getContext("2d");
+      new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: Object.keys(meses),
+          datasets: [{
+            label: "Pagamentos por mês",
+            data: Object.values(meses),
+            backgroundColor: "rgba(30,136,229,0.7)"
+          }]
+        },
+        options: {
+          responsive: true
+        }
+      });
+    }
+
+    document.getElementById("filtroUsuario").addEventListener("input", e => {
+      const termo = e.target.value.toLowerCase();
+      const filtrados = dadosTotais.filter(p =>
+        (p.usuario || "").toLowerCase().includes(termo) ||
+        (p.id || "").toLowerCase().includes(termo)
+      );
+      renderizarTabela(filtrados);
+    });
+
+    document.getElementById("filtroData").addEventListener("change", e => {
+      const dataFiltro = e.target.value;
+      const filtrados = dadosTotais.filter(p => {
+        const data = new Date(p.data).toISOString().split("T")[0];
+        return data === dataFiltro;
+      });
+      renderizarTabela(filtrados);
+    });
   </script>
 </body>
 </html>
