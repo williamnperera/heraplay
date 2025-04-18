@@ -27,6 +27,18 @@ export default async function handler(req, res) {
     } catch (e) {
       res.status(500).json({ erro: e.message });
     }
+  } else if (req.method === "PATCH") {
+    try {
+      const { usuario, nome, telefone, senha, data_expira } = req.body;
+      await axios.patch(`${URL}?usuario=eq.${usuario}`, {
+        nome, telefone, senha, data_expira
+      }, {
+        headers: { ...HEADERS, Prefer: "return=minimal" }
+      });
+      res.status(200).json({ status: "Usuário atualizado" });
+    } catch (e) {
+      res.status(500).json({ erro: e.message });
+    }
   } else {
     res.status(405).end();
   }
