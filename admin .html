@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Painel de Pagamentos</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      background: #f1f1f1;
+      text-align: center;
+    }
+    h1 {
+      color: #1e88e5;
+    }
+    table {
+      margin: 20px auto;
+      border-collapse: collapse;
+      width: 90%;
+      max-width: 1000px;
+      background: white;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+    }
+    th {
+      background-color: #1e88e5;
+      color: white;
+    }
+    input, button {
+      padding: 10px;
+      margin: 5px;
+      font-size: 14px;
+    }
+    #grafico {
+      max-width: 800px;
+      margin: 40px auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Painel de Pagamentos</h1>
+
+  <div id="login">
+    <p>Digite a senha:</p>
+    <input type="password" id="senha" placeholder="Senha de acesso" />
+    <button onclick="verificarSenha()">Entrar</button>
+    <p id="erro" style="color:red;"></p>
+  </div>
+
+  <div id="painel" style="display:none;">
+    <input type="text" id="filtroUsuario" placeholder="Buscar por usuário ou ID" />
+    <input type="date" id="filtroData" />
+    <button id="exportarExcel">Exportar para Excel</button>
+    <div id="grafico">
+      <canvas id="graficoVendas"></canvas>
+    </div>
+    <table id="tabela">
+      <thead>
+        <tr>
+          <th>Usuário</th>
+          <th>ID</th>
+          <th>Valor (R$)</th>
+          <th>Status</th>
+          <th>Data</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    let dadosTotais = [];
+
+    function verificarSenha() {
+      const senha = document.getElementById("senha").value;
+      if (senha === "adminhera") {
+        document.getElementById("login").style.display = "none";
+        document.getElementById("painel").style.display = "block";
+        carregarPagamentos();
+      } else {
+        document.getElementById("erro").innerText = "Senha incorreta!";
+      }
+    }
+
+    async function carregarPagamentos() {
+      const res = await fetch("/api/pix");
+      const dados = await res.json();
+      dadosTotais = dados;
+      aplicarFiltros();
+      gerarGrafico(dados);
+    }
+
+    function aplicarFiltros() {
+      const termo = document.getElementById("filtroUsuario").value.toLowerCase();
+      const dataFiltro = document.getElementById("filtroData").value;
+      let filtrados = dadosTotais;
+
+      if (termo) {
+        filtrados = filtrados.filter(p =>
+          (p.usuario || "").toLowerCase().includes(termo) ||
+          (p.id || "").toLowerCase().includes(termo)
+        );
+      }
+
+      if (dataFiltro) {
+        filtrados = filtrados.filter(p => (p.data || "").slice(0, 10) === dataFiltro);
+      }
+
+      renderizarTabela(filtrados);
+    }
+
+    function renderizarTabela(lista) {
+      const corpo = document.querySelector("#tabela tbody");
+      corpo.innerHTML = "";
+      lista.forEach(p => {
+        const data = new Date(p.data).toLocaleString();
+        const linha = `<tr>
+          <td>${p.usuario || "-"}</td>
+          <td>${p.id}</td>
+          <td>${(p.valor || 0).toFixed(2)}</td>
+          <td>${p.status}</td>
+          <td>${data}</td>
+          <td><button onclick="copiarID('${p.id}')">Copiar ID</button></td>
+        </tr>`;
+        corpo.innerHTML += linha;
+      });
+    }
+
+    function copiarID(id) {
+      navigator.clipboard.writeText(id);
+      alert("ID copiado: " + id);
+    }
+
+    function gerarGrafico(dados) {
+      const meses = {};
+      dados.forEach(p => {
+        const mes = new Date(p.data).toLocaleDateString("pt-BR", { month: "short", year: "numeric" });
+        if (!meses[mes]) meses[mes] = 0;
+        meses[mes] += 1;
+      });
+
+      const ctx = document.getElementById("graficoVendas").getContext("2d");
+      new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: Object.keys(meses),
+          datasets: [{
+            label: "Pagamentos por mês",
+            data: Object.values(meses),
+            backgroundColor: "rgba(30,136,229,0.7)"
+          }]
+        },
+        options: {
+          responsive: true
+        }
+      });
+    }
+
+    document.getElementById("filtroUsuario").addEventListener("input", aplicarFiltros);
+    document.getElementById("filtroData").addEventListener("change", aplicarFiltros);
+
+    document.getElementById("exportarExcel").addEventListener("click", () => {
+      const linhas = [
+        ["Usuário", "ID", "Valor", "Status", "Data"]
+      ];
+      dadosTotais.forEach(p => {
+        linhas.push([p.usuario, p.id, p.valor, p.status, p.data]);
+      });
+      const csv = linhas.map(l => l.join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "pagamentos.csv";
+      link.click();
+    });
+  </script>
+</body>
+</html>
