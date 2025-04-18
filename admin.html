@@ -3,7 +3,50 @@
 <head>
   <meta charset="UTF-8" />
   <title>Painel de Pagamentos</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js">
+    async function mostrarInfo(id) {
+      const div = document.getElementById("info-" + id);
+      if (div.style.display === "block") return div.style.display = "none";
+      const res = await fetch("/api/usuarios");
+      const usuarios = await res.json();
+      const u = usuarios.find(u => u.usuario === id);
+      if (!u) return div.innerHTML = "Não vinculado.";
+      div.innerHTML = `Nome: ${u.nome}<br>Telefone: ${u.telefone}<br>Senha: ${u.senha}<br>Expira: ${new Date(u.data_expira).toLocaleDateString()}`;
+      div.style.display = "block";
+    }
+  
+    async function editarUsuario(usuario) {
+      const res = await fetch("/api/usuarios");
+      const lista = await res.json();
+      const u = lista.find(u => u.usuario === usuario);
+      if (!u) return alert("Usuário não encontrado.");
+
+      document.getElementById("edit-nome").value = u.nome;
+      document.getElementById("edit-telefone").value = u.telefone;
+      document.getElementById("edit-senha").value = u.senha;
+      document.getElementById("edit-expira").value = u.data_expira;
+      document.getElementById("edit-usuario").value = u.usuario;
+
+      document.getElementById("modal-editar").style.display = "flex";
+    }
+
+    async function salvarEdicao() {
+      const usuario = document.getElementById("edit-usuario").value;
+      const nome = document.getElementById("edit-nome").value;
+      const telefone = document.getElementById("edit-telefone").value;
+      const senha = document.getElementById("edit-senha").value;
+      const data_expira = document.getElementById("edit-expira").value;
+
+      await fetch("/api/usuarios", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ usuario, nome, telefone, senha, data_expira })
+      });
+
+      document.getElementById("modal-editar").style.display = "none";
+      carregarUsuarios();
+    }
+  </script>
   <style>
     body { font-family: Arial; padding: 30px; background: #f1f1f1; }
     h1 { color: #1e88e5; text-align: center; }
@@ -55,7 +98,7 @@
     <div id="usuariosTab" class="hidden">
       <table id="tabelaUsuarios">
         <thead>
-          <tr><th>Nome</th><th>Telefone</th><th>Senha</th><th>Expiração</th></tr>
+          <tr><th>Nome</th><th>Telefone</th><th>Senha</th><th>ID</th><th>Expiração</th><th>Ações</th></tr>
         </thead>
         <tbody></tbody>
       </table>
@@ -72,10 +115,24 @@
       <button onclick="fecharModal()">Cancelar</button>
       <input type="hidden" id="idPagamento">
       <input type="hidden" id="valorPagamento">
+    
+    <div id="modal-editar" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center;">
+      <div style="background:white; padding: 20px; border-radius: 8px; width: 300px;">
+        <h3>Editar Usuário</h3>
+        <input id="edit-nome" placeholder="Nome" /><br/>
+        <input id="edit-telefone" placeholder="Telefone" /><br/>
+        <input id="edit-senha" placeholder="Senha" /><br/>
+        <input id="edit-expira" type="date" /><br/>
+        <button onclick="salvarEdicao()">Salvar</button>
+        <button onclick="document.getElementById('modal-editar').style.display='none'">Cancelar</button>
+        <input type="hidden" id="edit-usuario">
+      </div>
     </div>
+
   </div>
 
   <script>
+
     let dadosTotais = [];
     let grafico;
 
@@ -190,8 +247,16 @@
       const corpo = document.querySelector("#tabelaUsuarios tbody");
       corpo.innerHTML = "";
       dados.forEach(u => {
-        corpo.innerHTML += `<tr>
-          <td>${u.nome}</td>
+        
+  corpo.innerHTML += `<tr>
+    <td>${u.nome}</td>
+    <td>${u.telefone}</td>
+    <td>${u.senha}</td>
+    <td>${u.usuario}</td>
+    <td>${new Date(u.data_expira).toLocaleDateString()}</td>
+    <td><button onclick="editarUsuario('${u.usuario}')">Editar</button></td>
+  </tr>`;
+  
           <td>${u.telefone}</td>
           <td>${u.senha}</td>
           <td>${new Date(u.data_expira).toLocaleDateString()}</td>
@@ -236,6 +301,49 @@
       link.download = "pagamentos.csv";
       link.click();
     });
+  
+    async function mostrarInfo(id) {
+      const div = document.getElementById("info-" + id);
+      if (div.style.display === "block") return div.style.display = "none";
+      const res = await fetch("/api/usuarios");
+      const usuarios = await res.json();
+      const u = usuarios.find(u => u.usuario === id);
+      if (!u) return div.innerHTML = "Não vinculado.";
+      div.innerHTML = `Nome: ${u.nome}<br>Telefone: ${u.telefone}<br>Senha: ${u.senha}<br>Expira: ${new Date(u.data_expira).toLocaleDateString()}`;
+      div.style.display = "block";
+    }
+  
+    async function editarUsuario(usuario) {
+      const res = await fetch("/api/usuarios");
+      const lista = await res.json();
+      const u = lista.find(u => u.usuario === usuario);
+      if (!u) return alert("Usuário não encontrado.");
+
+      document.getElementById("edit-nome").value = u.nome;
+      document.getElementById("edit-telefone").value = u.telefone;
+      document.getElementById("edit-senha").value = u.senha;
+      document.getElementById("edit-expira").value = u.data_expira;
+      document.getElementById("edit-usuario").value = u.usuario;
+
+      document.getElementById("modal-editar").style.display = "flex";
+    }
+
+    async function salvarEdicao() {
+      const usuario = document.getElementById("edit-usuario").value;
+      const nome = document.getElementById("edit-nome").value;
+      const telefone = document.getElementById("edit-telefone").value;
+      const senha = document.getElementById("edit-senha").value;
+      const data_expira = document.getElementById("edit-expira").value;
+
+      await fetch("/api/usuarios", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ usuario, nome, telefone, senha, data_expira })
+      });
+
+      document.getElementById("modal-editar").style.display = "none";
+      carregarUsuarios();
+    }
   </script>
 </body>
 </html>
