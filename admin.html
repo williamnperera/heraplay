@@ -193,7 +193,7 @@
       corpo.innerHTML = "";
       dados.forEach(u => {
         corpo.innerHTML += `<tr>
-          <td>${u.nome}</td>
+          <td>${u.usuario}</td>
           <td>${u.telefone}</td>
           <td>${u.senha}</td>
           <td>${new Date(u.data_expira).toLocaleDateString()}</td>
@@ -278,7 +278,7 @@ async function carregarUsuarios() {
     .forEach(u => {
       corpo.innerHTML += `<tr>
         <td>${u.usuario}</td>
-        <td>${u.nome}</td>
+        <td>${u.usuario}</td>
         <td>${u.telefone}</td>
         <td>${u.senha}</td>
         <td>${new Date(u.data_expira).toLocaleDateString()}</td>
