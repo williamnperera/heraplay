@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <title>HERA PLAY - Pagamento Pix</title>
-  <style>
+<meta charset="utf-8"/>
+<title>HERA PLAY - Pagamento Pix</title>
+<style>
     body {
       font-family: sans-serif;
       background: #f7f7f7;
@@ -38,26 +39,24 @@
   </style>
 </head>
 <body>
-  <h1>HERA PLAY</h1>
-  <p>Informe seu nome e escolha um valor para gerar seu Pix:</p>
-  <input type="text" id="usuario" placeholder="Seu nome ou ID" required>
-  <select id="valor">
-    <option value="20">R$20 - Mensal</option>
-    <option value="55">R$55 - Trimestral</option>
-    <option value="150">R$150 - Anual</option>
-  </select>
-  <input type="number" id="valorPersonalizado" placeholder="Ou digite outro valor (opcional)">
-  <button onclick="criarPagamento()">Gerar Pagamento</button>
+<h1>HERA PLAY</h1>
+<p>Informe seu nome e escolha um valor para gerar seu Pix:</p>
+<input id="usuario" placeholder="Seu nome ou ID" required="" type="text"/>
+<select id="valor">
+<option value="20">R$20 - Mensal</option>
+<option value="55">R$55 - Trimestral</option>
+<option value="150">R$150 - Anual</option>
+</select>
 
-  <div id="resultado">
-    <h3>Escaneie o QR Code ou copie o código Pix:</h3>
-    <img id="qrcode" src="">
-    <p id="copiacola"></p>
-    <button onclick="copiarCodigo()">Copiar código Pix</button>
-    <p id="statusPagamento" style="margin-top: 15px; color: orange;">Aguardando pagamento...</p>
-  </div>
-
-  <script>
+<button onclick="criarPagamento()">Gerar Pagamento</button>
+<div id="resultado">
+<h3>Escaneie o QR Code ou copie o código Pix:</h3>
+<img id="qrcode" src=""/>
+<p id="copiacola"></p>
+<button onclick="copiarCodigo()">Copiar código Pix</button>
+<p id="statusPagamento" style="margin-top: 15px; color: orange;">Aguardando pagamento...</p>
+</div>
+<script>
     let paymentId = '';
 
     async function criarPagamento() {
@@ -68,8 +67,7 @@
       }
 
       const valorSelect = parseFloat(document.getElementById("valor").value);
-      const valorInput = parseFloat(document.getElementById("valorPersonalizado").value);
-      const valor = (valorInput || valorSelect) * 100;
+      const valor = valorSelect * 100;
 
       const resposta = await fetch("https://api.pushinpay.com.br/api/pix/cashIn", {
         method: "POST",
