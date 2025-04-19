@@ -255,17 +255,18 @@ async function editarUsuario(usuario) {
   const u = dados.find(d => d.usuario === usuario);
   if (!u) return alert("Usuário não encontrado.");
 
+  const usuarioNovo = prompt("Usuário:", u.usuario);
   const nome = prompt("Nome:", u.nome);
   const telefone = prompt("Telefone:", u.telefone);
   const senha = prompt("Senha:", u.senha);
   const expira = prompt("Data de Expiração (AAAA-MM-DD):", u.data_expira.slice(0,10));
 
-  if (!nome || !telefone || !senha || !expira) return;
+  if (!usuarioNovo || !nome || !telefone || !senha || !expira) return;
 
   await fetch("/api/usuarios", {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ usuario, nome, telefone, senha, data_expira: expira })
+    body: JSON.stringify({ usuario: usuarioNovo, nome, telefone, senha, data_expira: expira })
   });
 
   carregarUsuarios();
@@ -289,7 +290,7 @@ async function carregarUsuarios() {
         <td>${u.telefone}</td>
         <td>${u.senha}</td>
         <td>${new Date(u.data_expira).toLocaleDateString()}</td>
-        <td><button onclick="editarUsuario('${u.usuario}')">Editar</button></td>
+        <td><button onclick="editarUsuario('${u.usuario}')">Editar</button> <button onclick="excluirUsuario('${u.usuario}')">Excluir</button></td>
       </tr>`;
     });
 }
