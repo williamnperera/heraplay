@@ -10,9 +10,9 @@ const HEADERS = {
 export default async function handler(req, res) {
   if (req.method === "POST") {
     try {
-      const { usuario, nome, telefone, senha, valor_pago, data_expira } = req.body;
+      const { usuarios, nome, telefone, senha, valor_pago, data_expira } = req.body;
       await axios.post(URL, {
-        usuario, nome, telefone, senha, valor_pago, data_expira
+        usuarios, nome, telefone, senha, valor_pago, data_expira
       }, {
         headers: { ...HEADERS, Prefer: "return=minimal" }
       });
@@ -29,7 +29,7 @@ export default async function handler(req, res) {
     }
   } else if (req.method === "PATCH") {
     try {
-      const { usuario, nome, telefone, senha, data_expira } = req.body;
+      const { usuarios, nome, telefone, senha, data_expira } = req.body;
       await axios.patch(`${URL}?usuario=eq.${usuario}`, {
         nome, telefone, senha, data_expira
       }, {
