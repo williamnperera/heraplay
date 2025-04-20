@@ -162,7 +162,7 @@
 
     async function salvarUsuario() {
       const id = document.getElementById("idPagamento").value;
-      const user = document.getElementById("usuarios").value;
+      const user = document.getElementById("user").value;
       const nome = document.getElementById("nome").value;
       const telefone = document.getElementById("telefone").value;
       const senha = document.getElementById("senhaUsuario").value;
@@ -174,14 +174,16 @@
       await fetch("/api/usuarios", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          usuario: id,
-          nome,
-          telefone,
-          senha,
-          valor_pago: valor,
-          data_expira: dataExpira.toISOString().slice(0,10)
-        })
+     body: JSON.stringify({
+  usuario: id,
+  usuarios: user,
+  nome,
+  telefone,
+  senha,
+  valor_pago: valor,
+  data_expira: dataExpira.toISOString().slice(0,10)
+})
+
       });
 
       fecharModal();
