@@ -4,12 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <title>Painel de Pagamentos</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js">
-document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("btnEntrar").addEventListener("click", verificarSenha);
-});
-</script>
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
     body { font-family: Arial; padding: 30px; background: #f1f1f1; }
     h1 { color: #1e88e5; text-align: center; }
@@ -31,7 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
 <p style="text-align:center;">Digite a senha:</p>
 <div style="text-align:center;">
 <input id="senha" placeholder="Senha de acesso" type="password"/>
-<button id="btnEntrar">Entrar</button>
+<button onclick="verificarSenha()">Entrar</button>
 <p id="erro" style="color:red;"></p>
 </div>
 </div>
@@ -79,20 +74,20 @@ document.addEventListener("DOMContentLoaded", () => {
 <button onclick="salvarUsuario()">Salvar</button>
 <button onclick="fecharModal()">Cancelar</button>
 <input id="idPagamento" type="hidden"/>
-<input id="usuarioPagamento" type="hidden"/>
 <input id="valorPagamento" type="hidden"/>
 </div>
 </div>
 <script>
-else {
-    document.getElementById("erro").innerText = "Senha incorreta!";
-  }
-}
-
     let dadosTotais = [];
     let grafico;
 
-    else {
+    function verificarSenha() {
+      if (document.getElementById("senha").value === "adminhera") {
+        document.getElementById("login").style.display = "none";
+        document.getElementById("painel").style.display = "block";
+        carregarPagamentos();
+        carregarUsuarios();
+      } else {
         document.getElementById("erro").innerText = "Senha incorreta!";
       }
     }
@@ -154,19 +149,11 @@ else {
       alert("ID copiado: " + id);
     }
 
-    
-function abrirModal(id, valor) {
-  document.getElementById("modal").style.display = "flex";
-  document.getElementById("idPagamento").value = id;
-  document.getElementById("valorPagamento").value = valor;
-
-  const linha = [...document.querySelectorAll("#tabela tbody tr")].find(row =>
-    row.children[1].innerText === id
-  );
-  const nomeUsuario = linha ? linha.children[0].innerText : "";
-  document.getElementById("usuarioPagamento").value = nomeUsuario;
-}
-
+    function abrirModal(id, valor) {
+      document.getElementById("modal").style.display = "flex";
+      document.getElementById("idPagamento").value = id;
+      document.getElementById("valorPagamento").value = valor;
+    }
 
     function fecharModal() {
       document.getElementById("modal").style.display = "none";
@@ -174,7 +161,6 @@ function abrirModal(id, valor) {
 
     async function salvarUsuario() {
       const id = document.getElementById("idPagamento").value;
-const usuario = document.getElementById("usuarioPagamento").value;
       const nome = document.getElementById("nome").value;
       const telefone = document.getElementById("telefone").value;
       const senha = document.getElementById("senhaUsuario").value;
@@ -186,7 +172,8 @@ const usuario = document.getElementById("usuarioPagamento").value;
       await fetch("/api/usuarios", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ usuario,
+        body: JSON.stringify({
+          usuario: id,
           nome,
           telefone,
           senha,
@@ -199,7 +186,14 @@ const usuario = document.getElementById("usuarioPagamento").value;
       carregarUsuarios();
     }
 
-    </td>
+    async function carregarUsuarios() {
+      const res = await fetch("/api/usuarios");
+      const dados = await res.json();
+      const corpo = document.querySelector("#tabelaUsuarios tbody");
+      corpo.innerHTML = "";
+      dados.forEach(u => {
+        corpo.innerHTML += `<tr>
+          <td>${u.nome}</td>
           <td>${u.telefone}</td>
           <td>${u.senha}</td>
           <td>${new Date(u.data_expira).toLocaleDateString()}</td>
@@ -244,12 +238,7 @@ const usuario = document.getElementById("usuarioPagamento").value;
       link.download = "pagamentos.csv";
       link.click();
     });
-  
-document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("btnEntrar").addEventListener("click", verificarSenha);
-});
-</script>
-
+  </script>
 <script>
 document.getElementById("filtroStatus").addEventListener("change", carregarUsuarios);
 
@@ -293,47 +282,9 @@ async function carregarUsuarios() {
         <td>${u.telefone}</td>
         <td>${u.senha}</td>
         <td>${new Date(u.data_expira).toLocaleDateString()}</td>
-        <td><button onclick="editarUsuario(\'${u.usuario}\')">Editar</button> <button onclick="excluirUsuario(\'${u.usuario}\')">Excluir</button></td>
+        <td><button onclick="editarUsuario('${u.usuario}')">Editar</button></td>
       </tr>`;
     });
 }
-
-<script>
-async function excluirUsuario(usuario) {
-  if (!confirm("Tem certeza que deseja excluir este usuário?")) return;
-  await fetch("/api/usuarios", {
-    method: "DELETE",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ usuario })
-  });
-  carregarUsuarios();
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("btnEntrar").addEventListener("click", verificarSenha);
-});
-</script>
-
-<script>
-function verificarSenha() {
-  if (document.getElementById("senha").value === "adminhera") {
-    document.getElementById("login").style.display = "none";
-    document.getElementById("painel").style.display = "block";
-    carregarPagamentos();
-    carregarUsuarios();
-  } else {
-    document.getElementById("erro").innerText = "Senha incorreta!";
-  }
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  const btn = document.getElementById("btnEntrar");
-  if (btn) {
-    btn.addEventListener("click", verificarSenha);
-  }
-});
-</script>
-</body>
-
-
+</script></body>
 </html>
