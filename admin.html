@@ -162,7 +162,7 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
     }
 
     async function salvarUsuario() {
-      const id = document.getElementById("usuario").value;
+      const id = document.getElementById("idPagamento").value;
       const nome = document.getElementById("nome").value;
       const telefone = document.getElementById("telefone").value;
       const senha = document.getElementById("senhaUsuario").value;
@@ -249,32 +249,51 @@ async function excluirUsuario(usuario) {
 }
 </script>
 <script>
-async function editarUsuario(id) {
-  const res = await fetch('/api/usuarios');
-  const dados = await res.json();
-  const u = dados.find(x => x.id === id);
-  if (!u) return alert("Usuário não encontrado!");
+document.getElementById("filtroStatus").addEventListener("change", carregarUsuarios);
 
-  const usuario = prompt("Usuário:", u.usuario);
+async function editarUsuario(usuario) {
+  const res = await fetch("/api/usuarios");
+  const dados = await res.json();
+  const u = dados.find(d => d.usuario === usuario);
+  if (!u) return alert("Usuário não encontrado.");
+
   const nome = prompt("Nome:", u.nome);
   const telefone = prompt("Telefone:", u.telefone);
   const senha = prompt("Senha:", u.senha);
-  const expira = prompt("Data de expiração (YYYY-MM-DD):", u.data_expira);
+  const expira = prompt("Data de Expiração (AAAA-MM-DD):", u.data_expira.slice(0,10));
 
-  if (!usuario || !nome || !telefone || !senha || !expira) return;
+  if (!nome || !telefone || !senha || !expira) return;
 
-  await fetch(`/api/usuarios?id=eq.${id}`, {
+  await fetch("/api/usuarios", {
     method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      "apikey": eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9,
-      "Authorization": `Bearer ${eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9}`,
-      "Prefer": "return=representation"
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ usuario, nome, telefone, senha, data_expira: expira })
   });
 
   carregarUsuarios();
 }
-        </script></body>
+
+async function carregarUsuarios() {
+  const res = await fetch("/api/usuarios");
+  const dados = await res.json();
+  const corpo = document.querySelector("#tabelaUsuarios tbody");
+  const filtro = document.getElementById("filtroStatus").value;
+  const hoje = new Date().toISOString().slice(0,10);
+  corpo.innerHTML = "";
+  dados
+    .filter(u => filtro === "todos" ||
+      (filtro === "ativos" && u.data_expira >= hoje) ||
+      (filtro === "vencidos" && u.data_expira < hoje))
+    .forEach(u => {
+      corpo.innerHTML += `<tr>
+        <td>${u.usuario}</td>
+        <td>${u.nome}</td>
+        <td>${u.telefone}</td>
+        <td>${u.senha}</td>
+        <td>${new Date(u.data_expira).toLocaleDateString()}</td>
+        <td><button onclick="editarUsuario('${u.usuario}')">Editar</button></td>
+      </tr>`;
+    });
+}
+</script></body>
 </html>
