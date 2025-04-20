@@ -162,7 +162,7 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
     }
 
     async function salvarUsuario() {
-      const id = document.getElementById("idPagamento").value;
+      const id = document.getElementById("usuario").value;
       const nome = document.getElementById("nome").value;
       const telefone = document.getElementById("telefone").value;
       const senha = document.getElementById("senhaUsuario").value;
@@ -267,8 +267,8 @@ async function editarUsuario(id) {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
-      "apikey": SUPABASE_KEY,
-      "Authorization": `Bearer ${SUPABASE_KEY}`,
+      "apikey": eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9,
+      "Authorization": `Bearer ${eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9}`,
       "Prefer": "return=representation"
     },
     body: JSON.stringify({ usuario, nome, telefone, senha, data_expira: expira })
