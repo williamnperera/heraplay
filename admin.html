@@ -169,7 +169,7 @@
       const dataExpira = new Date();
       dataExpira.setDate(dataExpira.getDate() + dias);
 
-      await fetch("/api/usuarios", {
+      await fetch(`/api/usuarios?id=${usuario}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -242,7 +242,7 @@
 
 async function excluirUsuario(usuario) {
   if (!confirm("Deseja realmente excluir este usuário?")) return;
-  await fetch(`/api/usuarios?id=${usuario}`, { method: "DELETE" });
+  await fetch(`/api/usuarios?id=eq.${usuario}`, { method: "DELETE" });
   carregarUsuarios();
 }
 </script>
@@ -263,10 +263,11 @@ async function editarUsuario(usuario) {
 
   if (!usuarioNovo || !nome || !telefone || !senha || !expira) return;
 
-  await fetch("/api/usuarios", {
+  await fetch(`/api/usuarios?id=${usuario}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ usuario: usuarioNovo, nome, telefone, senha, data_expira: expira })
+    body: JSON.stringify({
+          usuario: id, usuario: usuarioNovo, nome, telefone, senha, data_expira: expira })
   });
 
   carregarUsuarios();
