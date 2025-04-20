@@ -249,7 +249,7 @@ async function excluirUsuario(usuario) {
 <script>
 document.getElementById("filtroStatus").addEventListener("change", carregarUsuarios);
 
-async function editarUsuario(usuario) {
+async function editarUsuario(uuid) {
   const res = await fetch("/api/usuarios");
   const dados = await res.json();
   const u = dados.find(d => d.usuario === usuario);
@@ -263,7 +263,7 @@ async function editarUsuario(usuario) {
 
   if (!usuarioNovo || !nome || !telefone || !senha || !expira) return;
 
-  await fetch(`/api/usuarios?id=eq.${usuario}`, {
+  await fetch("/api/usuarios", {
     method: "PATCH", headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Prefer": "return=representation" },
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ usuario: usuarioNovo, nome, telefone, senha, data_expira: expira })
@@ -293,19 +293,6 @@ async function carregarUsuarios() {
         <td><button onclick="editarUsuario('${u.usuario}')">Editar</button> <button onclick="excluirUsuario('${u.usuario}')">Excluir</button></td>
       </tr>`;
     });
-}
-
-
-async function excluirUsuario(id) {
-  if (!confirm("Deseja realmente excluir este usuário?")) return;
-  await fetch(`/api/usuarios?id=eq.${id}`, {
-    method: "DELETE",
-    headers: {
-      "apikey": SUPABASE_KEY,
-      "Authorization": `Bearer ${SUPABASE_KEY}`
-    }
-  });
-  carregarUsuarios();
 }
 </script></body>
 </html>
