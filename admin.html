@@ -161,7 +161,40 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
       document.getElementById("modal").style.display = "none";
     }
 
-    async function salvarUsuario() {
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZnc2luanprdWl2emVjbWpoZmxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ3MjgxMzMsImV4cCI6MjA2MDMwNDEzM30.F5pDo9-Fy9RPIcnaUJrT3jXYPCnORmBKeYtKuBhYOwA";
+
+async function salvarUsuario() {
+  const id = document.getElementById("idPagamento").value;
+  const nome = document.getElementById("nome").value;
+  const telefone = document.getElementById("telefone").value;
+  const senha = document.getElementById("senhaUsuario").value;
+  const valor = parseFloat(document.getElementById("valorPagamento").value);
+  const dias = valor === 20 ? 30 : valor === 55 ? 90 : valor === 150 ? 365 : 30;
+  const dataExpira = new Date();
+  dataExpira.setDate(dataExpira.getDate() + dias);
+
+  const body = {
+    usuario: id,
+    nome,
+    telefone,
+    senha,
+    data_expira: dataExpira.toISOString().split('T')[0]
+  };
+
+  await fetch("https://vgsinjzkuivzecmjhflq.supabase.co/rest/v1/usuarios", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": SUPABASE_KEY,
+      "Authorization": `Bearer ${SUPABASE_KEY}`,
+      "Prefer": "return=representation"
+    },
+    body: JSON.stringify(body)
+  });
+
+  fecharModal();
+  carregarUsuarios();
+}
       const id = document.getElementById("p.usuario").value;
       const nome = document.getElementById("nome").value;
       const telefone = document.getElementById("telefone").value;
