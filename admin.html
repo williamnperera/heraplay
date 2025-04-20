@@ -4,7 +4,12 @@
 <head>
 <meta charset="utf-8"/>
 <title>Painel de Pagamentos</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js">
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("btnEntrar").addEventListener("click", verificarSenha);
+});
+</script>
+
 <style>
     body { font-family: Arial; padding: 30px; background: #f1f1f1; }
     h1 { color: #1e88e5; text-align: center; }
@@ -26,7 +31,7 @@
 <p style="text-align:center;">Digite a senha:</p>
 <div style="text-align:center;">
 <input id="senha" placeholder="Senha de acesso" type="password"/>
-<button onclick="verificarSenha()">Entrar</button>
+<button id="btnEntrar">Entrar</button>
 <p id="erro" style="color:red;"></p>
 </div>
 </div>
@@ -79,16 +84,15 @@
 </div>
 </div>
 <script>
+else {
+    document.getElementById("erro").innerText = "Senha incorreta!";
+  }
+}
+
     let dadosTotais = [];
     let grafico;
 
-    function verificarSenha() {
-      if (document.getElementById("senha").value === "adminhera") {
-        document.getElementById("login").style.display = "none";
-        document.getElementById("painel").style.display = "block";
-        carregarPagamentos();
-        carregarUsuarios();
-      } else {
+    else {
         document.getElementById("erro").innerText = "Senha incorreta!";
       }
     }
@@ -240,7 +244,12 @@ const usuario = document.getElementById("usuarioPagamento").value;
       link.download = "pagamentos.csv";
       link.click();
     });
-  </script>
+  
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("btnEntrar").addEventListener("click", verificarSenha);
+});
+</script>
+
 <script>
 document.getElementById("filtroStatus").addEventListener("change", carregarUsuarios);
 
@@ -299,6 +308,32 @@ async function excluirUsuario(usuario) {
   });
   carregarUsuarios();
 }
-</script></body>
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("btnEntrar").addEventListener("click", verificarSenha);
+});
+</script>
+
+<script>
+function verificarSenha() {
+  if (document.getElementById("senha").value === "adminhera") {
+    document.getElementById("login").style.display = "none";
+    document.getElementById("painel").style.display = "block";
+    carregarPagamentos();
+    carregarUsuarios();
+  } else {
+    document.getElementById("erro").innerText = "Senha incorreta!";
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("btnEntrar");
+  if (btn) {
+    btn.addEventListener("click", verificarSenha);
+  }
+});
+</script>
+</body>
+
 
 </html>
