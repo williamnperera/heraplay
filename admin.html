@@ -4,7 +4,12 @@
 <head>
 <meta charset="utf-8"/>
 <title>Painel de Pagamentos</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js">
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("btnEntrar").addEventListener("click", verificarSenha);
+});
+</script>
+
 <style>
     body { font-family: Arial; padding: 30px; background: #f1f1f1; }
     h1 { color: #1e88e5; text-align: center; }
@@ -26,7 +31,7 @@
 <p style="text-align:center;">Digite a senha:</p>
 <div style="text-align:center;">
 <input id="senha" placeholder="Senha de acesso" type="password"/>
-<button onclick="verificarSenha()">Entrar</button>
+<button id="btnEntrar">Entrar</button>
 <p id="erro" style="color:red;"></p>
 </div>
 </div>
@@ -59,7 +64,7 @@
 </div>
 <table id="tabelaUsuarios">
 <thead>
-<tr><th>Usuário</th><th>Nome</th><th>Telefone</th><th>Senha</th><th>Expiração</th><th>Ações</th></tr>
+<tr><th>Usuários</th><th>Nome</th><th>Telefone</th><th>Senha</th><th>Expiração</th><th>Ações</th></tr>
 </thead>
 <tbody></tbody>
 </table>
@@ -74,20 +79,20 @@
 <button onclick="salvarUsuario()">Salvar</button>
 <button onclick="fecharModal()">Cancelar</button>
 <input id="idPagamento" type="hidden"/>
+<input id="usuarioPagamento" type="hidden"/>
 <input id="valorPagamento" type="hidden"/>
 </div>
 </div>
 <script>
+else {
+    document.getElementById("erro").innerText = "Senha incorreta!";
+  }
+}
+
     let dadosTotais = [];
     let grafico;
 
-    function verificarSenha() {
-      if (document.getElementById("senha").value === "adminhera") {
-        document.getElementById("login").style.display = "none";
-        document.getElementById("painel").style.display = "block";
-        carregarPagamentos();
-        carregarUsuarios();
-      } else {
+    else {
         document.getElementById("erro").innerText = "Senha incorreta!";
       }
     }
@@ -149,11 +154,19 @@
       alert("ID copiado: " + id);
     }
 
-    function abrirModal(id, valor) {
-      document.getElementById("modal").style.display = "flex";
-      document.getElementById("idPagamento").value = id;
-      document.getElementById("valorPagamento").value = valor;
-    }
+    
+function abrirModal(id, valor) {
+  document.getElementById("modal").style.display = "flex";
+  document.getElementById("idPagamento").value = id;
+  document.getElementById("valorPagamento").value = valor;
+
+  const linha = [...document.querySelectorAll("#tabela tbody tr")].find(row =>
+    row.children[1].innerText === id
+  );
+  const nomeUsuario = linha ? linha.children[0].innerText : "";
+  document.getElementById("usuarioPagamento").value = nomeUsuario;
+}
+
 
     function fecharModal() {
       document.getElementById("modal").style.display = "none";
@@ -161,6 +174,7 @@
 
     async function salvarUsuario() {
       const id = document.getElementById("idPagamento").value;
+const usuario = document.getElementById("usuarioPagamento").value;
       const nome = document.getElementById("nome").value;
       const telefone = document.getElementById("telefone").value;
       const senha = document.getElementById("senhaUsuario").value;
@@ -172,8 +186,7 @@
       await fetch("/api/usuarios", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          usuario: id,
+        body: JSON.stringify({ usuario,
           nome,
           telefone,
           senha,
@@ -186,14 +199,7 @@
       carregarUsuarios();
     }
 
-    async function carregarUsuarios() {
-      const res = await fetch("/api/usuarios");
-      const dados = await res.json();
-      const corpo = document.querySelector("#tabelaUsuarios tbody");
-      corpo.innerHTML = "";
-      dados.forEach(u => {
-        corpo.innerHTML += `<tr>
-          <td>${u.nome}</td>
+    </td>
           <td>${u.telefone}</td>
           <td>${u.senha}</td>
           <td>${new Date(u.data_expira).toLocaleDateString()}</td>
@@ -238,7 +244,12 @@
       link.download = "pagamentos.csv";
       link.click();
     });
-  </script>
+  
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("btnEntrar").addEventListener("click", verificarSenha);
+});
+</script>
+
 <script>
 document.getElementById("filtroStatus").addEventListener("change", carregarUsuarios);
 
@@ -276,15 +287,52 @@ async function carregarUsuarios() {
       (filtro === "ativos" && u.data_expira >= hoje) ||
       (filtro === "vencidos" && u.data_expira < hoje))
     .forEach(u => {
-      corpo.innerHTML += `<tr>
-        <td>${u.usuario}</td>
+      corpo.innerHTML += `<tr><td>${u.usuarios || "-"}</td>
         <td>${u.nome}</td>
         <td>${u.telefone}</td>
         <td>${u.senha}</td>
         <td>${new Date(u.data_expira).toLocaleDateString()}</td>
-        <td><button onclick="editarUsuario('${u.usuario}')">Editar</button></td>
+        <td><button onclick="editarUsuario(\'${u.usuario}\')">Editar</button> <button onclick="excluirUsuario(\'${u.usuario}\')">Excluir</button></td>
       </tr>`;
     });
 }
-</script></body>
+
+<script>
+async function excluirUsuario(usuario) {
+  if (!confirm("Tem certeza que deseja excluir este usuário?")) return;
+  await fetch("/api/usuarios", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ usuario })
+  });
+  carregarUsuarios();
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("btnEntrar").addEventListener("click", verificarSenha);
+});
+</script>
+
+<script>
+function verificarSenha() {
+  if (document.getElementById("senha").value === "adminhera") {
+    document.getElementById("login").style.display = "none";
+    document.getElementById("painel").style.display = "block";
+    carregarPagamentos();
+    carregarUsuarios();
+  } else {
+    document.getElementById("erro").innerText = "Senha incorreta!";
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("btnEntrar");
+  if (btn) {
+    btn.addEventListener("click", verificarSenha);
+  }
+});
+</script>
+</body>
+
+
 </html>
