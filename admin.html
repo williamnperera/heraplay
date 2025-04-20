@@ -169,7 +169,7 @@
       const dataExpira = new Date();
       dataExpira.setDate(dataExpira.getDate() + dias);
 
-      await fetch(`/api/usuarios?id=${usuario}`, {
+      await fetch("/api/usuarios", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -242,7 +242,7 @@
 
 async function excluirUsuario(usuario) {
   if (!confirm("Deseja realmente excluir este usuário?")) return;
-  await fetch(`/api/usuarios?id=eq.${usuario}`, { method: "DELETE" });
+  await fetch(`/api/usuarios?id=${usuario}`, { method: "DELETE" });
   carregarUsuarios();
 }
 </script>
@@ -263,11 +263,10 @@ async function editarUsuario(usuario) {
 
   if (!usuarioNovo || !nome || !telefone || !senha || !expira) return;
 
-  await fetch(`/api/usuarios?id=${usuario}`, {
-    method: "PATCH",
+  await fetch(`/api/usuarios?id=eq.${usuario}`, {
+    method: "PATCH", headers: { "Content-Type": "application/json" },
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-          usuario: id, usuario: usuarioNovo, nome, telefone, senha, data_expira: expira })
+    body: JSON.stringify({ usuario: usuarioNovo, nome, telefone, senha, data_expira: expira })
   });
 
   carregarUsuarios();
@@ -294,6 +293,15 @@ async function carregarUsuarios() {
         <td><button onclick="editarUsuario('${u.usuario}')">Editar</button> <button onclick="excluirUsuario('${u.usuario}')">Excluir</button></td>
       </tr>`;
     });
+}
+
+
+async function excluirUsuario(usuario) {
+  if (!confirm("Deseja realmente excluir este usuário?")) return;
+  await fetch(`/api/usuarios?id=eq.${usuario}`, {
+    method: "DELETE"
+  });
+  carregarUsuarios();
 }
 </script></body>
 </html>
